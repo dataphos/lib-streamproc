@@ -1,0 +1,75 @@
+; https://editorconfig.org/
+
+root = true
+
+[*]
+insert_final_newline = true
+charset = utf-8
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[{Makefile,go.mod,go.sum,*.go,.gitmodules}]
+indent_style = tab
+indent_size = 8
+
+[*.{xml,xsd}]
+max_line_length = off
+end_of_line = lf
+
+[*.py]
+indent_size = 4
+
+[*.md]
+indent_size = 2
+trim_trailing_whitespace = false
+insert_final_newline = true
+
+eclint_indent_style = unset
+
+[Dockerfile]
+indent_size = 4
+
+# Ignore paths
+[/node_modules/**]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+
+[/.git/**]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+
+[go.sum]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+
+[LICENSE]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+
+[**/testdata/**]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
+indent_style = unset
+indent_size = unset
+
+[**/LICENSE-3RD-PARTY.md]
+insert_final_newline = unset

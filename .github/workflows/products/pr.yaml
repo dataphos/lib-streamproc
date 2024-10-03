@@ -1,0 +1,285 @@
+name: PR CI
+
+on:
+  pull_request:
+    branches: [ develop, main ]
+
+env:
+  GO111MODULE: on
+  GO_VERSION: 1.19
+  NODE_VERSION: 22
+  LINT_ARGS: -v --skip-files .*_test.go --timeout 5m0s --out-${NO_FUTURE}format colored-line-number
+  GOLANGCI_LINT_VERSION: v1.50
+  TEST_ARGS: -v -short -coverprofile=coverage.out
+
+jobs:
+  commitlint:
+    name: Commit Lint Job
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install commitlint
+        run: |
+          npm install --save-dev @commitlint/{cli,config-conventional}
+
+      - name: Validate PR commits with commitlint
+        run: npx commitlint --from ${{ github.event.pull_request.head.sha }}~${{ github.event.pull_request.commits }} --to ${{ github.event.pull_request.head.sha }} --verbose
+
+  # Linting multiple Dockerfiles to ensure adherence to best practices and coding standards.
+  hadolint_job:
+    name: Hadolint Job
+    if: ${{ ! contains(github.head_ref, 'release-please--branches--main') }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dockerfile: # Add dockerfile paths eg. './persistor/docker/persistor/Dockerfile'
+          -
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Run Hadolint for ${{ matrix.dockerfile }}
+        uses: hadolint/hadolint-action@v2.0.0
+        with:
+          config: ./.hadolint.yaml
+          dockerfile: ${{ matrix.dockerfile }}
+
+  editor_config_job:
+    name: Editor Config Job
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Editor Config
+        run: |
+          npm install --save-dev editorconfig-checker
+          ./node_modules/.bin/editorconfig-checker
+
+  # Ensures that java and python code adhere to coding styles and conventions
+  java_and_python_lint_job:
+    name: Java and Python lint
+    if: ${{ ! contains(github.head_ref, 'release-please--branches--main') }}
+    uses: github/super-linter@v4
+    env:
+      GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+      VALIDATE_PYTHON_BLACK: true
+      VALIDATE_JAVA: true
+
+  # Ensures that the code adheres to the lint checks defined in .golangci.yaml.
+  lint_job:
+    name: Go lint job for all components
+    if: ${{ ! contains(github.head_ref, 'release-please--branches--main') }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        component:
+          - # Add file paths eg. './persistor
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+
+      # Using `tj-actions/changed-files` to check if any files in the component folder have changes
+      - name: Check if component folder has changed
+        id: check_changed_files
+        uses: tj-actions/changed-files@v45
+        with:
+          files: ${{ matrix.component }}/**
+
+      # Running lint steps if changes are detected in the component folder
+      - name: Set up Go
+        if: steps.check_changed_files.outputs.any_changed == 'true'
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          # Add all component folders for monorepos
+          cache-dependency-path: |
+            <component>/go.sum
+
+      - name: Tidy Go mod for ${{ matrix.component }}
+        if: steps.check_changed_files.outputs.any_changed == 'true'
+        working-directory: ${{ matrix.component }}
+        run: go mod tidy
+
+      - name: Run Go Lint for ${{ matrix.component }}
+        if: steps.check_changed_files.outputs.any_changed == 'true'
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.50.0
+          args: ${{ env.LINT_ARGS }}
+          skip-pkg-cache: true
+          skip-build-cache: true
+        working-directory: ${{ matrix.component }}
+
+  licenses_check:
+    name: 3rd Party Licenses Check
+    if: ${{ github.event.head_commit.committer.name != 'github-actions[bot]' || ! contains(github.head_ref, 'release-please--branches--main') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Retrieve PR and branch info
+        run: |
+          PR_TITLE="chore: update 3rd-party licenses (#${{ github.event.number }})"
+
+          PR_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/pulls?state=open" | \
+            jq --arg TITLE "$PR_TITLE" '.[] | select(.title == $TITLE) | { number: .number, head: .head.ref }')
+
+          echo "PR_INFO=$PR_INFO"
+
+          PR_NUMBER=$(echo "$PR_INFO" | jq -r .number)
+          BRANCH_NAME=$(echo "$PR_INFO" | jq -r .head)
+
+          echo "PR_TITLE=$PR_TITLE" >> $GITHUB_ENV
+          echo "PR_NUMBER=$PR_NUMBER" >> $GITHUB_ENV
+          echo "BRANCH_NAME=${BRANCH_NAME:-update-third-party-licenses-${{ github.run_id }}}" >> $GITHUB_ENV
+          echo "PARENT_BRANCH=${{ github.head_ref }}" >> $GITHUB_ENV
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        # if PR already exists
+      - name: Pull latest changes to existing branch
+        if: env.PR_NUMBER != ''
+        run: |
+          git fetch origin
+          git switch ${{ env.BRANCH_NAME }}
+          git pull origin ${{ env.PARENT_BRANCH }} --no-rebase
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          # Add all component folders for monorepos
+          cache-dependency-path: |
+            <component>/go.sum
+
+      - name: Install Go licenses
+        run: go install github.com/google/go-licenses@v1.4.0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+          cache: 'pip'
+          cache-dependency-path: '.github/workflows/requirements.txt'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r .github/workflows/requirements.txt
+
+      - name: Run go mod tidy, go mod vendor & license check
+      # switch to each component folder first e.g. "./persistor"
+        run: |
+          cd <component_folder>
+          go mod tidy
+          go mod vendor
+          go-licenses report ./... 2>/dev/null | python .github/workflows/generate_and_check_licenses.py
+          cd ../<next_component_folder>
+
+      - name: Check and Commit changes
+      # add licenses for each component
+        run: |
+          git add ./persistor/licenses ./indexer-api/licenses ./resubmitter-api/licenses
+
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "chore: update third party licenses"
+            echo "changes_committed=true" >> $GITHUB_ENV
+          else
+            echo "changes_committed=false" >> $GITHUB_ENV
+          fi
+
+      # This will fail if the incorrect go.mod or go.sum is committed
+      - name: Push changes
+        if: env.changes_committed == 'true'
+        run: |
+          git diff
+
+          if [[ -z "$PR_NUMBER" ]]; then
+            git switch -c ${{ env.BRANCH_NAME }}
+          fi
+          git push origin HEAD
+
+      - name: Create new PR
+        if: env.changes_committed == 'true' && env.PR_NUMBER == ''
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Creating a new PR..."
+          gh pr create --base "${{ env.PARENT_BRANCH }}" --head "update-third-party-licenses-${{ github.run_id }}" --title "${{ env.PR_TITLE }}" --body "This is an automated PR that updates the list of 3rd party licenses."
+
+  # Runs unit tests for all components in this repo
+  test_job:
+    name: Test Job for all components
+    if: ${{ github.base_ref == 'main' && ! contains(github.head_ref, 'release-please--branches--main') }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        component:
+          - # Add file paths eg. './persistor
+
+    steps:
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          # Add all component folders for monorepos
+          cache-dependency-path: |
+            <component>/go.sum
+
+      - name: Tidy Go mod for ${{ matrix.component }}
+        working-directory: ${{ matrix.component }}
+        run: go mod tidy
+
+      - name: Run Go Test for ${{ matrix.component }}
+        working-directory: ${{ matrix.component }}
+        run: go test ${{env.TEST_ARGS}} ./...
+
+  # Builds docker images for all components of the repo to test if they can successfully be built
+  Build_docker:
+    name: Test building docker images
+    if: ${{ ! contains(github.head_ref, 'release-please--branches--main') }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        component:
+          - dockerfile-path: # Add dockerfile path eg. './persistor/docker/persistor/Dockerfile'
+            image-name: # Add image name eg. 'persistor-core'
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set Tag
+        run: |
+          TAG="build-docker-test"
+          echo "TAG=$TAG" >> $GITHUB_ENV  # Exporting the TAG variable to the environment
+
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ matrix.component.image-name }}:${{ env.TAG }} -f ${{ matrix.component.dockerfile-path }} .

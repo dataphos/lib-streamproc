@@ -1,0 +1,90 @@
+name: PUSH CI
+
+on:
+  push:
+    branches: [ develop, main ]
+
+env:
+  GO_VERSION: 1.21
+
+jobs:
+  commitlint:
+    name: Commit Lint Job
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install commitlint
+        run: |
+          npm install --save-dev @commitlint/{cli,config-conventional}
+
+      - name: Validate current commit (last commit) with commitlint
+        run: npx commitlint --last --verbose
+
+  license_headers:
+    name: Add License Headers
+    if: github.event.head_commit.committer.name != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go environment
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install NWA tool
+        run: go install github.com/B1NARY-GR0UP/nwa@latest
+
+      - name: Add missing license headers
+        run: nwa add -c "Syntio Ltd." # WRITE FOLDER PATHS FOR ALL FOLDERS THAT CONTAIN FILES THAT REQUIRE HEADERS eg. ./persistor
+
+      - name: Check and Commit changes
+        id: check_commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          if ! git diff-index --quiet HEAD; then
+            git commit -m "style: add license headers"
+            echo "changes_committed=true" >> $GITHUB_ENV
+          else
+            echo "changes_committed=false" >> $GITHUB_ENV
+            echo "All necessary headers present."
+          fi
+
+      - name: Create a new branch for the PR
+        if: env.changes_committed == 'true'
+        run: |
+          git checkout -b "add-license-headers-${{ github.run_id }}"
+          git push origin HEAD
+
+      - name: Create Pull Request
+        if: env.changes_committed == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr create --base ${{ github.ref_name }} --head "add-license-headers-${{ github.run_id }}" --title "style: add license headers" --body "This PR adds license headers to the affected files. Recommendation: Merge this PR using the rebase-merge method"
+
+  release-please:
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          release-type: simple
