@@ -66,9 +66,6 @@ jobs:
       - name: Tidy
         run: go mod tidy
 
-      - name: Clear GolangCI-Lint Cache
-        run: golangci-lint cache clean
-
       - name: Go Lint
         uses: golangci/golangci-lint-action@v3
         with:

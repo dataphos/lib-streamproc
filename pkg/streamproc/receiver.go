@@ -184,9 +184,9 @@ func (e *BatchedReceiverExecutor) Run(ctx context.Context, receiver broker.Batch
 					}
 				}
 
-				brokerutil.NackAll(messagesToNack...)
+				brokerutil.NackAll(messagesToNack...) // nolint:contextcheck
 				if messagesToAck != nil {
-					brokerutil.AckAll(messagesToAck...)
+					brokerutil.AckAll(messagesToAck...) // nolint:contextcheck
 				}
 
 				diff := atomic.AddInt64(&errCount, 1) - atomic.LoadInt64(&errSnapshot)
@@ -196,7 +196,7 @@ func (e *BatchedReceiverExecutor) Run(ctx context.Context, receiver broker.Batch
 
 				return
 			}
-			brokerutil.AckAll(batch...)
+			brokerutil.AckAll(batch...) // nolint:contextcheck
 		})
 	}); err != nil {
 		errCount++
