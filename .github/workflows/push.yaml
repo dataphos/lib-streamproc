@@ -48,7 +48,7 @@ jobs:
         run: go install github.com/B1NARY-GR0UP/nwa@latest
 
       - name: Add missing license headers
-        run: nwa add -c "Syntio Ltd." # WRITE FOLDER PATHS FOR ALL FOLDERS THAT CONTAIN FILES THAT REQUIRE HEADERS eg. ./persistor
+        run: nwa add -c "Syntio Ltd." ./internal ./pkg
 
       - name: Check and Commit changes
         id: check_commit

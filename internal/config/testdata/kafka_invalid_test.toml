@@ -1,0 +1,55 @@
+# Copyright 2024 Syntio Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Invalid Kafka configuration.
+[consumer]
+type = "kafka"
+
+[consumer.kafka]
+# Invalid address, should be "hostname:port".
+address = "kafka:/mock_url"
+topic = "test"
+group_id = "test"
+
+[consumer.kafka.settings]
+min_bytes = "50"
+max_wait = "10s"
+max_bytes = "1000"
+max_concurrent_fetches = "5"
+max_poll_records = "20"
+transactional = "true"
+
+[consumer.kafka.kerberos]
+enabled = "true"
+key_tab_path = "testdata/mockFile"
+config_path = "testdata/mockFile"
+realm = "test"
+service = "test"
+username = "test"
+
+[consumer.kafka.prometheus]
+enabled = "true"
+namespace = "test"
+
+[consumer.kafka.plain_sasl]
+enabled = "true"
+zid = "test"
+# The user should be specified if sasl is enabled.
+pass = "test"
+
+[consumer.kafka.tls_config]
+enabled = "false"
+client_cert_file = ""
+client_key_file = ""
+ca_cert_file = ""

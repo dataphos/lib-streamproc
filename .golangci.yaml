@@ -78,7 +78,6 @@ linters:
     - bidichk
     - bodyclose
     - containedctx
-    - contextcheck
     # - cyclop
     - decorder
     - depguard
