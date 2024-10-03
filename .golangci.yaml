@@ -72,6 +72,8 @@ output:
 
 linters:
   disable-all: true
+  disable:
+    - contextcheck  # Explicitly disable contextcheck
   enable:
     - asasalint
     - asciicheck
