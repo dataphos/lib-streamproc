@@ -1,0 +1,107 @@
+# Copyright 2024 Syntio Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+[consumer]
+type = "" # insert "kafka", "pubsub", "servicebus", "jetstream" or "pulsar"
+
+
+[consumer.kafka]
+#address = "" # insert
+#topic = "" # insert
+#group_id = "" # insert
+
+[consumer.kafka.tls_config]
+#enabled = "" # insert "true" or "false"
+#client_cert_file = "" # insert
+#client_key_file = "" # insert
+#ca_cert_file = "" # insert
+
+[consumer.kafka.settings]
+#min_bytes = "" # insert
+#max_wait = "0" # insert
+#max_bytes = "" # insert
+#max_concurrent_fetches = "" # insert
+#max_poll_records = "" # insert
+#transactional = "" # insert "true" or "false"
+
+[consumer.kafka.kerberos]
+#enabled = "" # insert "true" or "false"
+#key_tab_path = "" # insert
+#config_path = "" # insert
+#realm = "" # insert
+#service = "" # insert
+#username = "" # insert
+
+[consumer.kafka.prometheus]
+#enabled = "" # insert "true" or "false"
+#namespace = "" #insert
+
+[consumer.kafka.plain_sasl]
+#enabled="" #insert "true" or "false"
+#zid = "" # insert
+#user = "" # insert
+#pass = "" # insert
+
+
+[consumer.pubsub]
+#project_id = "" # insert
+#subscription_id = "" # insert
+
+[consumer.pubsub.settings]
+#max_extension = "0" # insert
+#max_extension_period = "0" # insert
+#max_outstanding_messages = "" # insert
+#max_outstanding_bytes = "" # insert
+#num_goroutines = "" # insert
+
+
+[consumer.servicebus]
+#connection_string = "" # insert
+#topic = "" # insert
+#subscription = "" # insert
+
+[consumer.servicebus.settings]
+#batch_size = "" # insert
+
+
+[consumer.jetstream]
+#url = "" # insert
+#subject = "" # insert
+#consumer_name = "" # insert
+
+[consumer.jetstream.settings]
+#batch_size = "" # insert
+
+
+[consumer.pulsar]
+#service_url = "" # insert
+#topic = "" # insert
+#subscription = "" # insert
+
+[consumer.pulsar.tls_config]
+#enabled = "" # insert "true" or "false"
+#client_cert_file = "" # insert
+#client_key_file = "" # insert
+#ca_cert_file = "" # insert
+
+[consumer.pulsar.settings]
+#connection_timeout = "0" # insert
+#operation_timeout = "0" # insert
+#nack_redelivery_delay = "0" # insert
+#max_connections_per_broker = "" # insert
+#subscription_type = "" # insert "Exclusive", "Shared", "Failover" or "KeyShared"
+#receiver_queue_size = "" # insert
+#max_reconnect_to_broker = "" # insert
+#tls_trust_certs_file_path = "" # insert
+#tls_allow_insecure_connection = "" # insert "true" or "false"

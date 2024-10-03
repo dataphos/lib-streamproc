@@ -1,0 +1,41 @@
+# Copyright 2024 Syntio Ltd.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Invalid Pulsar conifguration.
+[consumer]
+type = "pulsar"
+
+[consumer.pulsar]
+service_url = "ps:/mock_url"
+topic = "test"
+subscription = "test"
+
+[consumer.pulsar.settings]
+connection_timeout = "3m"
+operation_timeout = "10s"
+nack_redelivery_delay = "30s"
+max_connections_per_broker = "2"
+subscription_type = "NonExistant"
+# Negative queue size.
+receiver_queue_size = "-2"
+max_reconnect_to_broker = "10"
+# If tls is enabled and insecure connections are disabled, trust_cert_file_path must be set.
+tls_trust_certs_file_path = ""
+tls_allow_insecure_connection = "false"
+
+[consumer.pulsar.tls_config]
+enabled = "true"
+client_cert_file = "./testdata/mockFile"
+client_key_file = "./testdata/mockFile"
+ca_cert_file = "./testdata/mockFile"
