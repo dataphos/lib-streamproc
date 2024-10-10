@@ -1,7 +1,12 @@
 # Changelog
 
 ## 1.0.0 (2024-10-03)
-**Contributors:** [@andrijadukic-syntio](https://github.com/andrijadukic-syntio), [@ijakas-syn](https://github.com/ijakas-syn)
+**Contributors:**
+[@andrijadukic-syntio](https://github.com/andrijadukic-syntio),
+[@ijakas-syn](https://github.com/ijakas-syn),
+[@nerafrajlic](https://github.com/nerafrajlic),
+[@dsokota](https://github.com/dsokota),
+[@vedrankolka](https://github.com/vedrankolka)
 
 ### ⚠ BREAKING CHANGES
 
